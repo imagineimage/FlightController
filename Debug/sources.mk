@@ -27,16 +27,13 @@ OBJCOPY_BIN :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
-C \
-CPP/Inc/px4demo_attitude_control_ert_rtw \
-CPP/Src \
+CPP \
 Core/Src \
 Core/Startup \
 Drivers/STM32F4xx_HAL_Driver/Src \
 FATFS/App \
 FATFS/Target \
 Fcboot \
-Fcboot/Second_att_control_codeblock_ert_rtw \
 Middlewares/Third_Party/FatFs/src \
 Middlewares/Third_Party/FatFs/src/option \
 Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 \

@@ -7,6 +7,10 @@
 
 #ifndef IST8310_H_
 #define IST8310_IST8310_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 /****************************************************************************
  *
  *   Copyright (c) 2012-2016 PX4 Development Team. All rights reserved.
@@ -177,7 +181,7 @@ IST8310_t ist8310;
 void IST8310(I2C_HandleTypeDef *phi2c);
 void IST8310_calHz();
 void IST8310_updataIT();
-void IST8310_i2cRxCpltCallback(I2C_HandleTypeDef *hi2c);
+void IST8310_i2cRxCpltCallback();
 /**
  * Write a register.
  *
@@ -218,128 +222,8 @@ void IST8310_read(uint8_t address, uint8_t *data, uint8_t count);
 
 void IST8310_reset();
 
-#ifdef TEMP
-class IST8310 : public device::I2C, public I2CSPIDriver<IST8310>
-{
-public:
-	IST8310(I2CSPIBusOption bus_option, int bus_number, int address, enum Rotation rotation, int bus_frequency);
-	virtual ~IST8310();
 
-	static I2CSPIDriverBase *instantiate(const BusCLIArguments &cli, const BusInstanceIterator &iterator,
-					     int runtime_instance);
-	static void print_usage();
-
-	virtual int     init();
-
-	/**
-	 * Initialise the automatic measurement state machine and start it.
-	 *
-	 * @note This function is called at open and error time.  It might make sense
-	 *       to make it more aggressive about resetting the bus in case of errors.
-	 */
-	void		start();
-
-	/**
-	 * Reset the device
-	 */
-	int         reset();
-
-	/**
-	 * Perform a poll cycle; collect from the previous measurement
-	 * and start a new one.
-	 *
-	 * This is the heart of the measurement state machine.  This function
-	 * alternately starts a measurement, or collects the data from the
-	 * previous measurement.
-	 *
-	 * When the interval between measurements is greater than the minimum
-	 * measurement interval, a gap is inserted between collection
-	 * and measurement to provide the most recent measurement possible
-	 * at the next interval.
-	 */
-	void            RunImpl();
-
-private:
-	int probe() override;
-
-	void            print_status() override;
-
-	PX4Magnetometer _px4_mag;
-
-	unsigned        _measure_interval{IST8310_CONVERSION_INTERVAL};
-
-	bool        _collect_phase{false};
-
-	perf_counter_t      _sample_perf;
-	perf_counter_t      _comms_errors;
-	perf_counter_t      _range_errors;
-	perf_counter_t      _conf_errors;
-
-	uint8_t 		_ctl3_reg{0};
-	uint8_t			_ctl4_reg{0};
-
-	/**
-	 * check the sensor configuration.
-	 *
-	 * checks that the config of the sensor is correctly set, to
-	 * cope with communication errors causing the configuration to
-	 * change
-	 */
-	void            check_conf();
-
-	/**
-	 * Write a register.
-	 *
-	 * @param reg       The register to write.
-	 * @param val       The value to write.
-	 * @return      OK on write success.
-	 */
-	int         write_reg(uint8_t reg, uint8_t val);
-
-	/**
-	 * Write to a register block.
-	 *
-	 * @param address   The register address to write to.
-	 * @param data      The buffer to write from.
-	 * @param count     The number of bytes to write.
-	 * @return      OK on write success.
-	 */
-	int     write(unsigned address, void *data, unsigned count);
-
-	/**
-	 * Read a register.
-	 *
-	 * @param reg       The register to read.
-	 * @param val       The value read.
-	 * @return      OK on read success.
-	 */
-	int         read_reg(uint8_t reg, uint8_t &val);
-
-	/**
-	 * read register block.
-	 *
-	 * @param address   The register address to read from.
-	 * @param data      The buffer to read into.
-	 * @param count     The number of bytes to read.
-	 * @return      OK on write success.
-	 */
-	int read(unsigned address, void *data, unsigned count);
-
-	/**
-	 * Issue a measurement command.
-	 *
-	 * @return      OK if the measurement command was successful.
-	 */
-	int         measure();
-
-	/**
-	 * Collect the result of the most recent measurement.
-	 */
-	int         collect();
-};
-
-
-
+#ifdef __cplusplus
+}
 #endif
-
 #endif /* IST8310_H_ */

@@ -12,12 +12,9 @@
 #include "cmsis_os.h"
 #include "math.h"
 
-#define MPU9250_I2C mpu9250.hi2c
-
-
 void MPU9250(I2C_HandleTypeDef *hi2c){
 	//configuration
-	MPU9250_I2C = hi2c;
+	mpu9250.hi2c = hi2c;
 	mpu9250.Ascale = MPU9250_AFS_8G;
 	mpu9250.Gscale = MPU9250_GFS_2000DPS;
 	mpu9250.Mscale = MPU9250_MFS_14BITS;
@@ -57,27 +54,13 @@ void MPU9250(I2C_HandleTypeDef *hi2c){
 	MPU9250_initAK8963();	//
 }
 
-void MPU9250_calHz(){
-	if(xTaskGetTickCount() - mpu9250.hz_lastUpdate > MPU9250_HZ_CHECK_TICK){
-		mpu9250.MPU9250_hz = mpu9250.MPU9250_hzCnt;
-		mpu9250.AK8963_hz = mpu9250.AK8963_hzCnt;
-		mpu9250.MPU9250_hzCnt = 0;
-		mpu9250.AK8963_hzCnt = 0;
-		mpu9250.hz_lastUpdate = xTaskGetTickCount();
-	}
-}
-
 void MPU9250_updateDMA(){
-	MPU9250_calHz();
 	if(mpu9250.dmaFlag != MPU9250_dmaIdle) return;
 	mpu9250.dmaFlag = MPU9250_dmaMPU9250;
-	HAL_I2C_Mem_Read_DMA(MPU9250_I2C, MPU9250_ADDRESS, ACCEL_XOUT_H, 1, mpu9250.MPU9250_buffer, 14);
+	HAL_I2C_Mem_Read_DMA(mpu9250.hi2c, MPU9250_ADDRESS, ACCEL_XOUT_H, 1, mpu9250.MPU9250_buffer, 14);
 }
 
-
-void MPU9250_i2cRxCpltCallback(I2C_HandleTypeDef *hi2c){
-	if(hi2c->Instance != MPU9250_I2C->Instance) return;
-
+void MPU9250_i2cRxCpltCallback(){
 	if(mpu9250.dmaFlag == MPU9250_dmaMPU9250){
 		if(MPU9250_calRawData() != MPU9250_Fail){
 			MPU9250_calCalibValue();
@@ -87,11 +70,10 @@ void MPU9250_i2cRxCpltCallback(I2C_HandleTypeDef *hi2c){
 			MPU9250_calRPY();
 
 			mpu9250.MPU9250_lastUpdate = xTaskGetTickCount();
-			mpu9250.MPU9250_hzCnt++;
 		}
 		if(xTaskGetTickCount() - mpu9250.AK8963_lastUpdate > AK8963_UPDATE_TICK){
 			mpu9250.dmaFlag = MPU9250_dmaAK8963;
-			HAL_I2C_Mem_Read_DMA(MPU9250_I2C, AK8963_ADDRESS, AK8963_XOUT_L, 1, mpu9250.AK8963_buffer, 7);
+			HAL_I2C_Mem_Read_DMA(mpu9250.hi2c, AK8963_ADDRESS, AK8963_XOUT_L, 1, mpu9250.AK8963_buffer, 7);
 			mpu9250.AK8963_lastUpdate = xTaskGetTickCount();
 			return;
 		}
@@ -99,7 +81,6 @@ void MPU9250_i2cRxCpltCallback(I2C_HandleTypeDef *hi2c){
 	else if(mpu9250.dmaFlag == MPU9250_dmaAK8963){
 			if(AK8963_calRawData() == MPU9250_Success){
 				AK8963_calCalibValue();
-			    mpu9250.AK8963_hzCnt++;
 			}
 	}
 	mpu9250.dmaFlag = MPU9250_dmaIdle;
@@ -789,12 +770,12 @@ void MPU9250_SelfTest(float * destination) // Should return percent deviation fr
 
 void MPU9250_writeByte(uint8_t address, uint8_t subAddress, uint8_t data)
 {
-	HAL_I2C_Mem_Write(MPU9250_I2C, address, subAddress, 1, &data, 1, MPU9250_DEFAULT_TIMEOUT);
+	HAL_I2C_Mem_Write(mpu9250.hi2c, address, subAddress, 1, &data, 1, MPU9250_DEFAULT_TIMEOUT);
 }
 
 void MPU9250_readBytes(uint8_t address, uint8_t subAddress, uint8_t count, uint8_t * dest)
 {
-	HAL_I2C_Mem_Read(MPU9250_I2C, address, subAddress, 1, (uint8_t*)dest, count, MPU9250_DEFAULT_TIMEOUT);
+	HAL_I2C_Mem_Read(mpu9250.hi2c, address, subAddress, 1, (uint8_t*)dest, count, MPU9250_DEFAULT_TIMEOUT);
 }
 
 char MPU9250_readByte(uint8_t address, uint8_t subAddress)

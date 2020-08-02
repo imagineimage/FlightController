@@ -9,6 +9,9 @@
 #define BME280_H_
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /* 06/16/2017 Copyright Tlera Corporation
  *
  *  Created by Kris Winer
@@ -122,7 +125,7 @@ void BME280(I2C_HandleTypeDef *hi2c);
 void BME280_calHz();
 
 void BME280_updateIT();
-void BME280_i2cRxCpltCallback(I2C_HandleTypeDef *hi2c);
+void BME280_i2cRxCpltCallback();
 
 int32_t BME280_readTemperature();
 int32_t BME280_readPressure();
@@ -140,5 +143,9 @@ void BME280_reset();
 void BME280_writeByte(uint8_t address, uint8_t subAddress, uint8_t data);
 uint8_t BME280_readByte(uint8_t address, uint8_t subAddress);
 void BME280_readBytes(uint8_t address, uint8_t subAddress, uint8_t count, uint8_t * dest);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* BME280_H_ */

@@ -8,7 +8,8 @@ extern "C" {
 #include "main.h"
 #include "stm32f4xx_hal_i2c.h"
 #include "string.h"
- 
+
+
 // See also MPU-9250 Register Map and Descriptions, Revision 4.0, RM-MPU-9250A-00, Rev. 1.4, 9/9/2013 for registers not listed in 
 // above document; the MPU9250 and MPU9150 are virtually identical but the latter has a different register map
 //
@@ -263,12 +264,11 @@ void MPU9250_calHz();
  *
  */
 void MPU9250_updateDMA();
-
 /*
  *  called by rxCpltCallback
  *  this function check
  */
-void MPU9250_i2cRxCpltCallback(I2C_HandleTypeDef *hi2c);
+void MPU9250_i2cRxCpltCallback();
 
 /*
  *  copy mpu9250 dma buffer to mpu9250 accel, gyro raw buffer

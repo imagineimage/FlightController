@@ -32,7 +32,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "fc_usec.h"
+#include "Usec.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -115,7 +115,7 @@ int main(void)
   /* Initialize interrupts */
   MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
-  userMain();
+  cppMain();
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -237,7 +237,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE BEGIN Callback 0 */
 	/* microseond timer */
   if(htim->Instance == TIM2){
-	  fcMsOverFlow();
+	  msOverFlow();
   }
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6) {

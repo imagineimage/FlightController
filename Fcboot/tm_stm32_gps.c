@@ -157,10 +157,6 @@ void TM_GPS_INT_CheckEmpty(TM_GPS_t* GPS_Data);
 /* Public */
 void TM_GPS_Init(UART_HandleTypeDef* huart) {
 	/* Initialize USART */
-//	GPS_USART_INIT(baudrate);
-	/* Set first-time variable */
-//	memset(&gps, 0, sizeof(gps));
-//	gps.GPS_Data.Status = TM_GPS_Result_FirstDataWaiting;
 	TM_GPS_FirstTime = 1;
 	
 	/* Reset everything */
@@ -202,9 +198,6 @@ void TM_GPS_Init(UART_HandleTypeDef* huart) {
 }
 
 TM_GPS_Result_t TM_GPS_Update() {
-
-	/* Check for data in USART */
-//	while (!GPS_USART_BUFFER_EMPTY) {
 
 //	HAL_UART_Transmit(&huart3, GPS_DmaBuf, GPS_DMA_BUF_SIZE, 100);
 	for(int i=0; i<GPS_DMA_BUF_SIZE; i++){

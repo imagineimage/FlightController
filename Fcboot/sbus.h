@@ -166,9 +166,8 @@ void SBUS_decoding() {
 }
 
 
-void SBUS_uartRxCpltCallback(UART_HandleTypeDef *huart){// must call this function on HAL_UART_RxCpltCallback
+void SBUS_uartRxCpltCallback(){// must call this function on HAL_UART_RxCpltCallback
 	static uint8_t i=0;
-	if(huart->Instance != sbus.huart->Instance) return;
 
 	for(i=0; i<SBUS_DMA_BUF_SIZE;i++){
 		_curByte = sbus.dmaBuf[i];

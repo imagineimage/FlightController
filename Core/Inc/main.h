@@ -55,7 +55,7 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-void CppMain();
+void cppMain();
 void userMain();
 /* USER CODE END EFP */
 
