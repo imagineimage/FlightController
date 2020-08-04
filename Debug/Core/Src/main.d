@@ -54,7 +54,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Middlewares/Third_Party/FatFs/src/ff.h ../FATFS/Target/sd_diskio.h \
  ../Core/Inc/i2c.h ../Core/Inc/sdio.h ../Core/Inc/tim.h \
  ../Core/Inc/usart.h ../Core/Inc/usb_otg.h ../Core/Inc/gpio.h \
- C:/Users/junwoo/Desktop/STM32/CPPTEST/Fcboot/Usec.h
+ C:/STM/CPPTEST/Fcboot/Usec.h
 
 ../Core/Inc/main.h:
 
@@ -186,4 +186,4 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 
 ../Core/Inc/gpio.h:
 
-C:/Users/junwoo/Desktop/STM32/CPPTEST/Fcboot/Usec.h:
+C:/STM/CPPTEST/Fcboot/Usec.h:

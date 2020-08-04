@@ -15,26 +15,45 @@
 #include "timers.h"
 
 //additional
-#include "stdio.h"
-#include "stdlib.h"
+#include "cstdio"
+#include "cstdlib"
 
 //selfmade
-#include "MPU9250.h"
-#include "sbus.h"
-#include "tm_stm32_gps.h"
-#include "IST8310.h"
-#include "bme280.h"
+#include "Driver/MPU9250.h"
+#include "Driver/sbus.h"
+#include "Driver/tm_stm32_gps.h"
+#include "Driver/IST8310.h"
+#include "Driver/bme280.h"
 
 //
 #include "PeripheralInterface/SensorAccel.hpp"
+#include "PeripheralInterface/SensorGyro.hpp"
+#include "PeripheralInterface/SensorMag.hpp"
+#include "PeripheralInterface/SensorGPS.hpp"
+#include "PeripheralInterface/SensorBaro.hpp"
+#include "PeripheralInterface/RC.hpp"
+
+#include "Module/ModuleAHRS.hpp"
+#include "Module/ModuleCommander.h"
 
 using namespace FC;
 
+#define USE_MPU9250
 #define USE_IST8310
 #define USE_GPS
-#define USE_MPU9250
 #define USE_BME280
 #define USE_SBUS
+#define USE_AHRS
+
+
+SensorMag sensorMag;
+SensorAccel sensorAccel;
+SensorGyro sensorGyro;
+SensorBaro sensorBaro;
+SensorGPS sensorGPS;
+RC rc;
+
+ModuleAHRS moduleAHRS;
 
 //we can use printf
 int _write(int file, unsigned char* p, int len) // for debug through uart3
@@ -45,32 +64,16 @@ int _write(int file, unsigned char* p, int len) // for debug through uart3
 
 
 #ifdef USE_GPS
-void GPS_main(){
-	taskENTER_CRITICAL();
-    TM_GPS_Init(&huart8);
-	taskEXIT_CRITICAL();
-
-	while(1){
-		GPS_calHz();
-		printf("%u\r\n", gps.hz);
-		osDelay(1000);
-	}
-}
+//void GPS_main(){
+//	while(1){
+//		GPS_calHz();
+//		printf("%u\r\n", gps.hz);
+//		osDelay(1000);
+//	}
+//}
 #endif
 
 #ifdef USE_IST8310
-void IST8310_main(){
-	taskENTER_CRITICAL();
-	IST8310(&hi2c2);
-	taskEXIT_CRITICAL();
-
-	while(1){
-
-		IST8310_updataIT();
-
-		osDelay(10);
-	}
-}
 void IST8310_timer(TimerHandle_t pxTimer){
 	IST8310_updataIT();
 }
@@ -78,10 +81,70 @@ void IST8310_timer(TimerHandle_t pxTimer){
 
 
 #ifdef USE_BME280
-void BME280_main(){
-	taskENTER_CRITICAL();
-	BME280(&hi2c2);
+void BME280_timer(TimerHandle_t pxTimer){
+	BME280_updateIT();
+}
+#endif
 
+#ifdef USE_MPU9250
+void MPU9250_timer(TimerHandle_t pxTimer){
+	MPU9250_updateDMA();
+}
+#endif
+
+#ifdef USE_AHRS
+void moduleAHRS_timer(TimerHandle_t pxTimer){
+	moduleAHRS.main();
+}
+#endif
+
+float tna;
+float tat;
+float tctl;
+uint8_t curArm;
+void debug_main(void* param){
+
+	while(1){
+		struct ArmMode prvArm;
+		msgBus.getArmMode(&prvArm);
+		curArm = prvArm.armModeType;
+		osDelay(10);
+	}
+}
+
+#define MPU9250_UPDATE_HZ 200
+#define BME280_UPDATE_HZ 50
+#define IST8310_UPDATE_HZ 100
+
+#define AHRS_UPDATE_HZ 200
+
+void cppMain(){
+    setvbuf(stdout, NULL, _IONBF, 0);
+
+    /* micro second timer start */
+	HAL_TIM_Base_Start_IT(&htim2);
+
+#ifdef USE_MPU9250
+	MPU9250(&hi2c1);
+	TimerHandle_t thMPU9250 = xTimerCreate("MPU9250_timer",
+										   pdMS_TO_TICKS(1000/MPU9250_UPDATE_HZ),
+										   pdTRUE,
+										   NULL,
+										   MPU9250_timer);
+	if(thMPU9250 == NULL) {
+		/* timer heap error */
+		while(1){
+
+		}
+	}
+	/* timer start */
+	if( xTimerStart( thMPU9250, 0 ) != pdPASS )
+	{
+		// The timer could not be set into the Active state.
+	}
+#endif
+
+#ifdef USE_BME280
 	/*
 	 * recommended mode : gaming
 	 * Sensor mode : normal mode, standby = 0.5ms
@@ -92,97 +155,48 @@ void BME280_main(){
 	 * Filter bandwidth : 1.75 Hz
 	 * response time : 0.3s
 	 */
-	BME280_init(P_OSR_04, H_OSR_00, T_OSR_01, normal, BW0_021ODR,t_00_5ms);
-	taskEXIT_CRITICAL();
-
-	while(1){
-		BME280_updateIT();
-		osDelay(20);
-	}
-}
-void BME280_timer(TimerHandle_t pxTimer){
-	BME280_updateIT();
-}
-#endif
-
-#ifdef USE_MPU9250
-void MPU9250_main(void* param){
-	TickType_t xLastWakeTime;
-	const TickType_t xFrequency = 5;
-
-	taskENTER_CRITICAL();
-	MPU9250(&hi2c1);
-	taskEXIT_CRITICAL();
-
-	xLastWakeTime = xTaskGetTickCount();
-	while(1){
-		vTaskDelayUntil(&xLastWakeTime, xFrequency);
-		MPU9250_updateDMA();
-	}
-}
-
-void MPU9250_timer(TimerHandle_t pxTimer){
-	MPU9250_updateDMA();
-}
-#endif
-
-void debug_main(void* param){
-
-	while(1){
-		osDelay(1000);
-	}
-}
-
-#define MPU9250_UPDATE_HZ 200
-#define BME280_UPDATE_HZ 50
-#define IST8310_UPDATE_HZ 100
-
-void cppMain(){
-    setvbuf(stdout, NULL, _IONBF, 0);
-
-    /* micro second timer start */
-	HAL_TIM_Base_Start_IT(&htim2);
-
-	TimerHandle_t timerResult;
-#ifdef USE_MPU9250
-	MPU9250(&hi2c1);
-	timerResult = xTimerCreate("MPU9250_timer",
-							   pdMS_TO_TICKS(1000/MPU9250_UPDATE_HZ),
-							   pdTRUE,
-							   NULL,
-							   MPU9250_timer);
-	if(timerResult == NULL) {
-		while(1);
-	}
-#endif
-
-#ifdef USE_BME280
 	BME280(&hi2c2);
 	BME280_init(P_OSR_04, H_OSR_00, T_OSR_01, normal, BW0_021ODR,t_00_5ms);
-	timerResult = xTimerCreate("BME280_timer",
-							   pdMS_TO_TICKS(1000/BME280_UPDATE_HZ),
-							   pdTRUE,
-							   NULL,
-							   BME280_timer);
-	if(timerResult == NULL) {
-		while(1);
+	TimerHandle_t thBME280 = xTimerCreate("BME280_timer",
+										  pdMS_TO_TICKS(1000/BME280_UPDATE_HZ),
+										  pdTRUE,
+										  NULL,
+										  BME280_timer);
+	if(thBME280 == NULL) {
+		while(1){
+			/* timer heap error */
+		}
+	}
+	/* timer start */
+	if( xTimerStart( thBME280, 0 ) != pdPASS )
+	{
+		// The timer could not be set into the Active state.
 	}
 #endif
 
 #ifdef USE_IST8310
 	IST8310(&hi2c2);
-	timerResult = xTimerCreate("IST8310_timer",
-							   pdMS_TO_TICKS(1000/IST8310_UPDATE_HZ),
-							   pdTRUE,
-							   NULL,
-							   IST8310_timer);
-    if(timerResult == NULL) {
-		while(1);
+	TimerHandle_t thIST8310 = xTimerCreate("IST8310_timer",
+										   pdMS_TO_TICKS(1000/IST8310_UPDATE_HZ),
+										   pdTRUE,
+										   NULL,
+										   IST8310_timer);
+	if(thIST8310 == NULL) {
+		while(1){
+			/* timer heap error */
+		}
+	}
+	/* timer start */
+	if( xTimerStart( thIST8310, 0 ) != pdPASS )
+	{
+		// The timer could not be set into the Active state.
 	}
 #endif
 
-
 #ifdef USE_GPS
+	/*
+	 *  GPS using DMA circular mode
+	 */
     TM_GPS_Init(&huart8);
 #endif
 
@@ -190,10 +204,27 @@ void cppMain(){
 	SBUS_init(&huart7);
 #endif
 
-    printf("boot complete\r\n");
+#ifdef USE_AHRS
+	TimerHandle_t thModuleAHRS = xTimerCreate("moduleAHRS_timer",
+							   	   	   	   	  pdMS_TO_TICKS(1000/AHRS_UPDATE_HZ),
+											  pdTRUE,
+											  NULL,
+											  moduleAHRS_timer);
+	if(thModuleAHRS == NULL) {
+		/* timer heap error */
+		while(1){
 
+		}
+	}
+	/* timer start */
+	if( xTimerStart( thModuleAHRS, 0 ) != pdPASS )
+	{
+		// The timer could not be set into the Active state.
+	}
+#endif
 
-//    cMain();
+    std::printf("boot complete\r\n");
+
 	xTaskCreate(debug_main,
 				"debug_main",
 				configMINIMAL_STACK_SIZE,
@@ -247,6 +278,8 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c){
 	if(hi2c->Instance == mpu9250.hi2c->Instance){
 		MPU9250_i2cRxCpltCallback();
 		sensorAccel.setAccel(mpu9250.accel[0], mpu9250.accel[1], mpu9250.accel[2]);
+		sensorGyro.setGyro(mpu9250.gyro[0], mpu9250.gyro[1], mpu9250.gyro[2]);
+		sensorMag.setMag(mpu9250.mag[0], mpu9250.mag[1], mpu9250.mag[2]);
 	}
 #endif
 
@@ -259,6 +292,7 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c){
 #ifdef USE_BME280
 	if(hi2c->Instance == bme280.hi2c->Instance){
 		BME280_i2cRxCpltCallback();
+		sensorBaro.setBaro(bme280.P, bme280.T);
 	}
 #endif
 }
@@ -267,12 +301,22 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 #ifdef USE_SBUS
 	if(huart->Instance == sbus.huart->Instance){
-		SBUS_uartRxCpltCallback();
+		if(SBUS_uartRxCpltCallback() == SBUS_Result_NewData){
+			rc.setRC(SBUS_getChannel(2),	/* roll */
+					 SBUS_getChannel(3),	/* pitch */
+					 SBUS_getChannel(3), 	/* yaw */
+					 SBUS_getChannel(1),	/* throttle */
+					 SBUS_getChannel(11));
+		}
 	}
 #endif
 #ifdef USE_GPS
-	if(huart->Instance == UART5){
-		TM_GPS_Update();
+	if(huart->Instance == UART8){
+		if(TM_GPS_Update() == TM_GPS_Result_NewData){
+			sensorGPS.setGPS(gpsUart.gpsData.Latitude, gpsUart.gpsData.Longitude, gpsUart.gpsData.Altitude,
+							 TM_GPS_ConvertSpeed(gpsUart.gpsData.Speed, TM_GPS_Speed_MeterPerSecond), gpsUart.gpsData.Direction, gpsUart.gpsData.HDOP, gpsUart.gpsData.VDOP,
+							 gpsUart.gpsData.Satellites, gpsUart.gpsData.FixMode, 0/* UTC in microsecond */);
+		}
 	}
 #endif
 

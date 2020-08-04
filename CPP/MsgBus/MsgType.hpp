@@ -5,7 +5,7 @@
 namespace FC{
 
 /*
- *  peripheral data
+ *  Peripheral data
  */
 struct BodyAccel {
     uint64_t timestamp;
@@ -45,8 +45,8 @@ struct GPS{
 
 struct Barometer{
     uint64_t timestamp;
-    float pressure;
-    float temperature;
+    float pressure;			/* hPa */
+    float temperature;		/* degC */
 };
 
 struct Controller{
@@ -54,21 +54,46 @@ struct Controller{
     uint16_t roll;
     uint16_t pitch;
     uint16_t yaw;
-    uint16_t thrust;
+    uint16_t throttle;
 };
 
 /*
- *  AHRS
+ *  Estimate
  */
 struct Attitude{
     uint64_t timestamp;
-    float q[4];
-    float roll, pitch, yaw;
+    float q[4];	/* quaternion */
+    float roll, pitch, yaw;	/* roll pitch yaw */
 };
 
 struct NedAccel{
     uint64_t timestamp;
     float xyz[3];
+};
+
+/*
+ *  Command State Flag
+ */
+enum class FlightModeType{
+	ControlAttitude,
+	ControlPosition,
+	AutoWaypoint,
+	AutoRTL,
+	AutoTakeoff,
+	AutoLand,
+};
+struct FlightMode{
+	uint64_t timestamp;
+	FlightModeType flightModeType;
+};
+
+enum class ArmModeType{
+	Arm,
+	DisArm
+};
+struct ArmMode{
+	uint64_t timestamp;
+	ArmModeType armModeType;
 };
 
 }

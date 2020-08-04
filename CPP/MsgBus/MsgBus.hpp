@@ -1,16 +1,6 @@
 #ifndef __MSGBUS__H
 #define __MSGBUS__H
 
-// #define SIMPLE_FUNC_IMPL(ret, fname, var) \
-//            ret get##fname() \
-//            { \
-//                      return var; \
-//            } \
-//            void set##fname(ret tmp) \
-//            { \
-//                      var = tmp; \
-//            }
-
 #define SIMPLE_FUNC_IMPL(ret, fname, var) \
             bool get##fname(ret *tmp) \
             { \
@@ -18,7 +8,7 @@
                     *tmp = var;\
                     return true; \
                 }\
-                return false\
+                return false;\
             } \
             void set##fname(const ret &tmp) \
             { \
@@ -29,32 +19,42 @@
 
 namespace FC{
 
-
 class MsgBus {
 public:
+	MsgBus() = default;
+
     SIMPLE_FUNC_IMPL(BodyAccel, BodyAccel, bodyAccel);
     SIMPLE_FUNC_IMPL(BodyAngularVelocity, BodyAngularVelocity, bodyAngularVelocity);
     SIMPLE_FUNC_IMPL(BodyMag, BodyMag, bodyMag);
     SIMPLE_FUNC_IMPL(GPS, GPS, gps);
     SIMPLE_FUNC_IMPL(Barometer, Barometer, barometer);
     SIMPLE_FUNC_IMPL(Controller, Controller, controller);
-
     
-    SIMPLE_FUNC_IMPL(Controller, Controller, controller);
-    SIMPLE_FUNC_IMPL(Controller, Controller, controller);
+    SIMPLE_FUNC_IMPL(Attitude, Attitude, attitude);
+    SIMPLE_FUNC_IMPL(NedAccel, NedAccel, nedAccel);
 
+    SIMPLE_FUNC_IMPL(FlightMode, FlightMode, flightMode);
+    SIMPLE_FUNC_IMPL(ArmMode, ArmMode, armMode);
 private:
-    static struct BodyAccel bodyAccel{};
-    static struct BodyAngularVelocity bodyAngularVelocity{};
-    static struct BodyMag bodyMag{};
-    static struct GPS gps{};
-    static struct Barometer barometer{};
-    static struct Controller controller{};
+    /* Peripheral Interface */
+    struct BodyAccel bodyAccel{};
+    struct BodyAngularVelocity bodyAngularVelocity{};
+    struct BodyMag bodyMag{};
+    struct GPS gps{};
+    struct Barometer barometer{};
+    struct Controller controller{};
 
-    static struct Attitude attitude{};
-    static struct NedAccel nedAccel{};
-}
+    /* estimate */
+    struct Attitude attitude{};
+    struct NedAccel nedAccel{};
 
+    /* flight state */
+    struct FlightMode flightMode{FlightMode::controlAttitude};
+    struct ArmMode armMode{ArmMode::DisArm};
+
+};
+
+MsgBus msgBus;		/* global variable */
 }
 
 #endif

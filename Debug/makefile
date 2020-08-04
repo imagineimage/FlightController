@@ -14,12 +14,12 @@ RM := rm -rf
 -include Middlewares/Third_Party/FreeRTOS/Source/subdir.mk
 -include Middlewares/Third_Party/FatFs/src/option/subdir.mk
 -include Middlewares/Third_Party/FatFs/src/subdir.mk
--include Fcboot/subdir.mk
 -include FATFS/Target/subdir.mk
 -include FATFS/App/subdir.mk
 -include Drivers/STM32F4xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
+-include CPP/Driver/subdir.mk
 -include CPP/subdir.mk
 -include subdir.mk
 -include objects.mk
@@ -65,8 +65,8 @@ CPPTEST.bin \
 all: CPPTEST.elf secondary-outputs
 
 # Tool invocations
-CPPTEST.elf: $(OBJS) $(USER_OBJS) C:\Users\junwoo\Desktop\STM32\CPPTEST\STM32F429ZITX_FLASH.ld
-	arm-none-eabi-g++ -o "CPPTEST.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\junwoo\Desktop\STM32\CPPTEST\STM32F429ZITX_FLASH.ld" -Wl,-Map="CPPTEST.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+CPPTEST.elf: $(OBJS) $(USER_OBJS) C:\STM\CPPTEST\STM32F429ZITX_FLASH.ld
+	arm-none-eabi-g++ -o "CPPTEST.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\STM\CPPTEST\STM32F429ZITX_FLASH.ld" -Wl,-Map="CPPTEST.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
