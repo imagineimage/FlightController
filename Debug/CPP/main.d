@@ -57,15 +57,19 @@ CPP/main.o: ../CPP/main.cpp ../Core/Inc/main.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h \
  ../CPP/Driver/MPU9250.h ../CPP/Driver/sbus.h \
  ../CPP/Driver/tm_stm32_gps.h ../CPP/Driver/IST8310.h \
- ../CPP/Driver/bme280.h ../CPP/PeripheralInterface/SensorAccel.hpp \
- C:/STM/CPPTEST/Fcboot/Usec.h C:/STM/CPPTEST/CPP/MsgBus/MsgType.hpp \
+ ../CPP/Driver/bme280.h ../CPP/Driver/Lidar1D.h \
+ ../CPP/PeripheralInterface/SensorAccel.hpp C:/STM/CPPTEST/Fcboot/Usec.h \
+ C:/STM/CPPTEST/CPP/MsgBus/MsgType.hpp \
  C:/STM/CPPTEST/CPP/MsgBus/MsgBus.hpp \
  C:/STM/CPPTEST/CPP/MsgBus/MsgType.hpp \
  ../CPP/PeripheralInterface/SensorGyro.hpp \
  ../CPP/PeripheralInterface/SensorMag.hpp \
  ../CPP/PeripheralInterface/SensorGPS.hpp \
  ../CPP/PeripheralInterface/SensorBaro.hpp \
- ../CPP/PeripheralInterface/RC.hpp ../CPP/Module/ModuleAHRS.hpp \
+ ../CPP/PeripheralInterface/RC.hpp \
+ C:/STM/CPPTEST/CPP/Module/ModuleCommander.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h \
+ ../CPP/Module/ModuleAHRS.hpp \
  C:/STM/CPPTEST/CPP/Lib/Matrix/matrix/Dcm.hpp \
  C:/STM/CPPTEST/CPP/Lib/Matrix/matrix/math.hpp \
  C:/STM/CPPTEST/CPP/Lib/Matrix/matrix/stdlib_imports.hpp \
@@ -83,7 +87,8 @@ CPP/main.o: ../CPP/main.cpp ../Core/Inc/main.h \
  C:/STM/CPPTEST/CPP/Lib/Matrix/matrix/LeastSquaresSolver.hpp \
  C:/STM/CPPTEST/CPP/Lib/Matrix/matrix/Dual.hpp \
  C:/STM/CPPTEST/CPP/Lib/Matrix/matrix/PseudoInverse.hpp \
- C:/STM/CPPTEST/CPP/Lib/Matrix/matrix/PseudoInverse.hxx
+ C:/STM/CPPTEST/CPP/Lib/Matrix/matrix/PseudoInverse.hxx \
+ ../CPP/Module/ModuleCommander.h
 
 ../Core/Inc/main.h:
 
@@ -221,6 +226,8 @@ CPP/main.o: ../CPP/main.cpp ../Core/Inc/main.h \
 
 ../CPP/Driver/bme280.h:
 
+../CPP/Driver/Lidar1D.h:
+
 ../CPP/PeripheralInterface/SensorAccel.hpp:
 
 C:/STM/CPPTEST/Fcboot/Usec.h:
@@ -240,6 +247,10 @@ C:/STM/CPPTEST/CPP/MsgBus/MsgType.hpp:
 ../CPP/PeripheralInterface/SensorBaro.hpp:
 
 ../CPP/PeripheralInterface/RC.hpp:
+
+C:/STM/CPPTEST/CPP/Module/ModuleCommander.h:
+
+../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h:
 
 ../CPP/Module/ModuleAHRS.hpp:
 
@@ -278,3 +289,5 @@ C:/STM/CPPTEST/CPP/Lib/Matrix/matrix/Dual.hpp:
 C:/STM/CPPTEST/CPP/Lib/Matrix/matrix/PseudoInverse.hpp:
 
 C:/STM/CPPTEST/CPP/Lib/Matrix/matrix/PseudoInverse.hxx:
+
+../CPP/Module/ModuleCommander.h:

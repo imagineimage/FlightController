@@ -33,8 +33,7 @@ public:
     SIMPLE_FUNC_IMPL(Attitude, Attitude, attitude);
     SIMPLE_FUNC_IMPL(NedAccel, NedAccel, nedAccel);
 
-    SIMPLE_FUNC_IMPL(FlightMode, FlightMode, flightMode);
-    SIMPLE_FUNC_IMPL(ArmMode, ArmMode, armMode);
+    SIMPLE_FUNC_IMPL(ModeFlag, ModeFlag, modeFlag);
 private:
     /* Peripheral Interface */
     struct BodyAccel bodyAccel{};
@@ -49,8 +48,7 @@ private:
     struct NedAccel nedAccel{};
 
     /* flight state */
-    struct FlightMode flightMode{FlightMode::controlAttitude};
-    struct ArmMode armMode{ArmMode::DisArm};
+    struct ModeFlag modeFlag{0, Command::DisArm, Command::ControlAttitude};
 
 };
 

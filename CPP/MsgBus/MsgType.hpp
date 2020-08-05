@@ -4,6 +4,18 @@
 
 namespace FC{
 
+enum class Command{
+	ControlAttitude,
+	ControlPosition,
+	AutoWaypoint,
+	AutoRTL,
+	AutoTakeoff,
+	AutoLand,
+
+	Arm,
+	DisArm
+};
+
 /*
  *  Peripheral data
  */
@@ -82,19 +94,17 @@ enum class FlightModeType{
 	AutoTakeoff,
 	AutoLand,
 };
-struct FlightMode{
+struct ModeFlag{
 	uint64_t timestamp;
-	FlightModeType flightModeType;
+	Command armMode;
+	Command flightMode;
 };
 
 enum class ArmModeType{
 	Arm,
 	DisArm
 };
-struct ArmMode{
-	uint64_t timestamp;
-	ArmModeType armModeType;
-};
+
 
 }
 

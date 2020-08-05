@@ -9,22 +9,51 @@
 #include "bme280.h"
 #include "math.h"
 
-#define BME280_I2C bme280.hi2c
+BME280_t bme280 = {0,};
 
-void BME280(I2C_HandleTypeDef *hi2c){
+void BME280_init(I2C_HandleTypeDef *hi2c, uint8_t Posr, uint8_t Hosr, uint8_t Tosr, uint8_t Mode, uint8_t IIRFilter, uint8_t SBy){
 	bme280.hi2c = hi2c;
 	BME280_reset();
+	// Configure the BME280
+	// Set H oversampling rate
+	BME280_writeByte(BME280_ADDRESS, BME280_CTRL_HUM, 0x07 & Hosr);
+	// Set T and P oversampling rates and sensor mode
+	BME280_writeByte(BME280_ADDRESS, BME280_CTRL_MEAS, Tosr << 5 | Posr << 2 | Mode);
+	// Set standby time interval in normal mode and bandwidth
+	BME280_writeByte(BME280_ADDRESS, BME280_CONFIG, SBy << 5 | IIRFilter << 2);
+
+	//wait.
+	HAL_Delay(50);
+	uint8_t calib[26];
+	BME280_readBytes(BME280_ADDRESS, BME280_CALIB00, 26, &calib[0]);
+	bme280._dig_T1 = (uint16_t)(((uint16_t) calib[1] << 8) | calib[0]);
+	bme280._dig_T2 = ( int16_t)((( int16_t) calib[3] << 8) | calib[2]);
+	bme280._dig_T3 = ( int16_t)((( int16_t) calib[5] << 8) | calib[4]);
+	bme280._dig_P1 = (uint16_t)(((uint16_t) calib[7] << 8) | calib[6]);
+	bme280._dig_P2 = ( int16_t)((( int16_t) calib[9] << 8) | calib[8]);
+	bme280._dig_P3 = ( int16_t)((( int16_t) calib[11] << 8) | calib[10]);
+	bme280._dig_P4 = ( int16_t)((( int16_t) calib[13] << 8) | calib[12]);
+	bme280._dig_P5 = ( int16_t)((( int16_t) calib[15] << 8) | calib[14]);
+	bme280._dig_P6 = ( int16_t)((( int16_t) calib[17] << 8) | calib[16]);
+	bme280._dig_P7 = ( int16_t)((( int16_t) calib[19] << 8) | calib[18]);
+	bme280._dig_P8 = ( int16_t)((( int16_t) calib[21] << 8) | calib[20]);
+	bme280._dig_P9 = ( int16_t)((( int16_t) calib[23] << 8) | calib[22]);
+	bme280._dig_H1 = calib[25];
+	BME280_readBytes(BME280_ADDRESS, BME280_CALIB26, 7, &calib[0]);
+	bme280._dig_H2 = ( int16_t)((( int16_t) calib[1] << 8) | calib[0]);
+	bme280._dig_H3 = calib[2];
+	bme280._dig_H4 = ( int16_t)(((( int16_t) calib[3] << 8) | (0x0F & calib[4]) << 4) >> 4);
+	bme280._dig_H5 = ( int16_t)(((( int16_t) calib[5] << 8) | (0xF0 & calib[4]) ) >> 4 );
+	bme280._dig_H6 = calib[6];
 }
 
-void BME280_updateIT(){
-	while(1){
-		if(bm_i2cFlag == bm_i2cIdle){
-			HAL_I2C_Mem_Read_IT(BME280_I2C, BME280_ADDRESS, BME280_PRESS_MSB, 1, bme280.buf, 6);
-			bm_i2cFlag = bm_i2cBME280;
-			return;
-		}
-		else osDelay(1);
+void BME280_readIT(){
+	if(bm_i2cFlag == bm_i2cIdle){
+		HAL_I2C_Mem_Read_IT(bme280.hi2c, BME280_ADDRESS, BME280_PRESS_MSB, 1, bme280.buf, 6);
+		bm_i2cFlag = bm_i2cBME280;
+		return;
 	}
+
 }
 
 void BME280_i2cRxCpltCallback(){
@@ -66,50 +95,7 @@ int16_t BME280_readHumidity(){
 	  return (int16_t) (((int16_t) rawData[0] << 8 | rawData[1]) );
 }
 
-void BME280_init(uint8_t Posr, uint8_t Hosr, uint8_t Tosr, uint8_t Mode, uint8_t IIRFilter, uint8_t SBy){
-	// Configure the BME280
-	  // Set H oversampling rate
-	  BME280_writeByte(BME280_ADDRESS, BME280_CTRL_HUM, 0x07 & Hosr);
-	  // Set T and P oversampling rates and sensor mode
-  	  BME280_writeByte(BME280_ADDRESS, BME280_CTRL_MEAS, Tosr << 5 | Posr << 2 | Mode);
-	  // Set standby time interval in normal mode and bandwidth
-	  BME280_writeByte(BME280_ADDRESS, BME280_CONFIG, SBy << 5 | IIRFilter << 2);
 
-	  //wait.
-	  HAL_Delay(50);
-	  uint8_t calib[26];
-	  BME280_readBytes(BME280_ADDRESS, BME280_CALIB00, 26, &calib[0]);
-	  bme280._dig_T1 = (uint16_t)(((uint16_t) calib[1] << 8) | calib[0]);
-	  bme280._dig_T2 = ( int16_t)((( int16_t) calib[3] << 8) | calib[2]);
-	  bme280._dig_T3 = ( int16_t)((( int16_t) calib[5] << 8) | calib[4]);
-	  bme280._dig_P1 = (uint16_t)(((uint16_t) calib[7] << 8) | calib[6]);
-	  bme280._dig_P2 = ( int16_t)((( int16_t) calib[9] << 8) | calib[8]);
-	  bme280._dig_P3 = ( int16_t)((( int16_t) calib[11] << 8) | calib[10]);
-	  bme280._dig_P4 = ( int16_t)((( int16_t) calib[13] << 8) | calib[12]);
-	  bme280._dig_P5 = ( int16_t)((( int16_t) calib[15] << 8) | calib[14]);
-	  bme280._dig_P6 = ( int16_t)((( int16_t) calib[17] << 8) | calib[16]);
-	  bme280._dig_P7 = ( int16_t)((( int16_t) calib[19] << 8) | calib[18]);
-	  bme280._dig_P8 = ( int16_t)((( int16_t) calib[21] << 8) | calib[20]);
-	  bme280._dig_P9 = ( int16_t)((( int16_t) calib[23] << 8) | calib[22]);
-	  bme280._dig_H1 = calib[25];
-	  BME280_readBytes(BME280_ADDRESS, BME280_CALIB26, 7, &calib[0]);
-	  bme280._dig_H2 = ( int16_t)((( int16_t) calib[1] << 8) | calib[0]);
-	  bme280._dig_H3 = calib[2];
-	  bme280._dig_H4 = ( int16_t)(((( int16_t) calib[3] << 8) | (0x0F & calib[4]) << 4) >> 4);
-	  bme280._dig_H5 = ( int16_t)(((( int16_t) calib[5] << 8) | (0xF0 & calib[4]) ) >> 4 );
-	  bme280._dig_H6 = calib[6];
-
-	  /* base altitude set */
-	  int32_t p = 0;
-	  float comP = 0;
-	  double sum = 0;
-	  for(int i=0; i<10; i++){
-		  p = BME280_readPressure();
-		  comP = BME280_compensate_P(p)/25600.0;
-		  sum += comP;
-	  }
-	  bme280.base_P = (float)sum/10;
-}
 
 // Returns temperature in DegC, resolution is 0.01 DegC. Output value of
 // “5123” equals 51.23 DegC.
@@ -162,10 +148,10 @@ uint32_t BME280_compensate_H(int32_t adc_H){
 }
 
 void BME280_writeByte(uint8_t address, uint8_t subAddress, uint8_t data){
-	HAL_I2C_Mem_Write(BME280_I2C, address, subAddress, 1, &data, 1, BME_DEFAULT_TIMEOUT);
+	HAL_I2C_Mem_Write(bme280.hi2c, address, subAddress, 1, &data, 1, BME_DEFAULT_TIMEOUT);
 }
 void BME280_readBytes(uint8_t address, uint8_t subAddress, uint8_t count, uint8_t * dest){
-	HAL_I2C_Mem_Read(BME280_I2C, address, subAddress, 1, (uint8_t*)dest, count, BME_DEFAULT_TIMEOUT);
+	HAL_I2C_Mem_Read(bme280.hi2c, address, subAddress, 1, (uint8_t*)dest, count, BME_DEFAULT_TIMEOUT);
 }
 uint8_t BME280_readByte(uint8_t address, uint8_t subAddress){
 	uint8_t data;

@@ -16,90 +16,89 @@
 
 namespace FC{
 
-enum class Command{
-	ModeChangeAttitude,
-	ModeChangePosition,
-	ModeChangeWaypoint,
-	ModeChangeRTL,
-	ModeChangeTakeoff,
-	ModeChangeLand,
-
-	ArmCommand,
-	DisArmCommand
-};
+#define CMD_QUEUE_LENGTH 3
+#define CMD_QUEUE_ITEM_SIZE sizeof(Command)
 
 enum class CmdResult{
 	Denied,
 	Changed
 };
 
-typedef uint8_t command_t;
-
 class ModuleCommander{
 public:
-	ModuleCommander();
-	~ModuleCommander();
 	void init();
 	void main();
 
-	bool sendCommand(command_t cmd);
+	static bool sendCommand(Command cmd);
 private:
-	struct ModeFlag modeFlagPub{FlightMode::ControlAttitude, ArmMode::DisArm};
-	QueueHandle_t commandQueue;
+//	static StaticQueue_t xQueueBuffer;
+//	static uint8_t ucQueueStorage[CMD_QUEUE_LENGTH*CMD_QUEUE_ITEM_SIZE];
+//	static QueueHandle_t commandQueue;
 
-	CmdResult commandHandler(command_t cmd);
+	struct ModeFlag modeFlagPub{};
+
+	CmdResult commandHandler(Command cmd);
 	CmdResult toAttitude();
 	CmdResult toPosition();
 	CmdResult toArm();
 	CmdResult toDisArm();
 };
 
+//uint8_t ModuleCommander::ucQueueStorage[CMD_QUEUE_LENGTH*CMD_QUEUE_ITEM_SIZE];
+//QueueHandle_t ModuleCommander::commandQueue = xQueueCreateStatic(CMD_QUEUE_LENGTH,
+//																   sizeof(Command),
+//																   ucQueueStorage,
+//																   &xQueueBuffer);
+
+
+StaticQueue_t xQueueBuffer;
+uint8_t ucQueueStorage[CMD_QUEUE_LENGTH*CMD_QUEUE_ITEM_SIZE];
+QueueHandle_t commandQueue = xQueueCreateStatic(CMD_QUEUE_LENGTH,
+							   sizeof(Command),
+							   ucQueueStorage,
+							   &xQueueBuffer);
+
 ModuleCommander moduleCommander;
 
-ModuleCommander::ModuleCommander(){
-	commandQueue = xQueueCreate(3, sizeof(command_t));
-}
-ModuleCommander::~ModuleCommander(){
-	vQueueDelete(commandQueue);
-}
-
 void ModuleCommander::main(){
-	command_t rcvCommand;
+	Command rcvCommand;
 	if(xQueueReceive(commandQueue, &rcvCommand, portMAX_DELAY)){
 		commandHandler(rcvCommand);
 	}
 }
 
-bool ModuleCommander::sendCommand(command_t cmd){
-	if(xQueueSendToBack(commandQueue, &cmd, 0) != pdPASS) return false;
+bool ModuleCommander::sendCommand(Command cmd){
+//	if(xQueueSendToBack(commandQueue, &cmd, 0) != pdPASS) return false;
+	xQueueSendToBackFromISR( commandQueue, &cmd, NULL );
 
 	return true;
 }
 
-CmdResult ModuleCommander::commandHandler(rcvCommand){
-	switch(rcvCommand){
-	case Command::ModeChangeAttitude:
+CmdResult ModuleCommander::commandHandler(Command cmd){
+	switch(cmd){
+	case Command::ControlAttitude:
 		return toAttitude();
 		break;
-	case Command::ModeChangePosition:
-		return toPosition();
+	case Command::ControlPosition:
+//		return toPosition();
 		break;
-	case Command::ModeChangeWaypoint:
+	case Command::AutoWaypoint:
 		break;
-	case Command::ModeChangeRTL:
+	case Command::AutoRTL:
 		break;
-	case Command::ModeChangeTakeoff:
+	case Command::AutoTakeoff:
 		break;
-	case Command::ModeChangeLand:
+	case Command::AutoLand:
 		break;
 
-	case Command::ArmCommand:
+	case Command::Arm:
 		return toArm();
 		break;
-	case Command::DisArmCommand:
+	case Command::DisArm:
 		return toDisArm();
 		break;
 	}
+	return CmdResult::Denied;
 }
 
 CmdResult ModuleCommander::toAttitude(){
@@ -107,21 +106,22 @@ CmdResult ModuleCommander::toAttitude(){
 }
 
 CmdResult ModuleCommander::toArm(){
-	struct ArmMode armMode;
-	armMode.timestamp = microsecond();
-	armMode.armModeType = ArmModeType::Arm;
-	msgBus.setArmMode(armMode);
+	struct ModeFlag modeFlag;
+	msgBus.getModeFlag(&modeFlag);
+	modeFlag.timestamp = microsecond();
+	modeFlag.armMode = Command::Arm;
+	msgBus.setModeFlag(modeFlag);
 }
 
 CmdResult ModuleCommander::toDisArm(){
-	struct ArmMode armMode;
-	armMode.timestamp = microsecond();
-	armMode.armModeType = ArmModeType::DisArm;
-	msgBus.setArmMode(armMode);
+	struct ModeFlag modeFlag;
+	msgBus.getModeFlag(&modeFlag);
+	modeFlag.timestamp = microsecond();
+	modeFlag.armMode = Command::DisArm;
+	msgBus.setModeFlag(modeFlag);
 }
 
 }
-
 
 
 #endif /* MODULE_MODULECOMMANDER_H_ */

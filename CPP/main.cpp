@@ -24,7 +24,7 @@
 #include "Driver/tm_stm32_gps.h"
 #include "Driver/IST8310.h"
 #include "Driver/bme280.h"
-
+#include "Driver/Lidar1D.h"
 //
 #include "PeripheralInterface/SensorAccel.hpp"
 #include "PeripheralInterface/SensorGyro.hpp"
@@ -35,6 +35,7 @@
 
 #include "Module/ModuleAHRS.hpp"
 #include "Module/ModuleCommander.h"
+
 
 using namespace FC;
 
@@ -82,7 +83,7 @@ void IST8310_timer(TimerHandle_t pxTimer){
 
 #ifdef USE_BME280
 void BME280_timer(TimerHandle_t pxTimer){
-	BME280_updateIT();
+	BME280_readIT();
 }
 #endif
 
@@ -98,18 +99,91 @@ void moduleAHRS_timer(TimerHandle_t pxTimer){
 }
 #endif
 
-float tna;
-float tat;
-float tctl;
-uint8_t curArm;
+void moduleCommanderMain(void* param){
+	while(1){
+		moduleCommander.main();
+	}
+}
+
+uint8_t test = 0;
+uint8_t testUsr = 0;
+uint8_t check = 0;
+/*
+ *  Switch
+ *  Click : High
+ *  GPIO_PinState result = HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_7);
+ */
+/*
+ * 	buzzer
+ *  if(HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1) != HAL_OK){
+ *		error
+ *	}
+ */
+/*
+ *  LED signal
+ *  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_12, GPIO_PIN_RESET);
+ */
+
 void debug_main(void* param){
+    char buf[256];
+    uint32_t bw;
+    int len = 0;
+    retSD=f_mount(&SDFatFS ,&SDPath[0],1);
+	if(retSD==FR_OK){
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_SET);
+	}
+	else HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_RESET);
 
 	while(1){
-		struct ArmMode prvArm;
-		msgBus.getArmMode(&prvArm);
-		curArm = prvArm.armModeType;
-		osDelay(10);
+		/* open */
+		f_open(&SDFile,"log.txt", FA_OPEN_APPEND | FA_WRITE );
+		if(retSD==FR_OK){
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_SET);
+			HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
+		}
+		else HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_RESET);
+
+		/* data read */
+//		struct Attitude attitude;
+//		struct NedAccel nedAccel;
+//		struct GPS gps;
+//		struct Barometer baro;
+////		if(msgBus.getAttitude(&attitude)){
+//		msgBus.getAttitude(&attitude);
+//			len = sprintf(buf, "att %u %d %d %d\n", attitude.timestamp, (int)(attitude.roll*1000000),
+//													(int)(attitude.pitch*1000000),
+//													(int)(attitude.yaw*1000000));
+//			f_write(&SDFile, buf, len, (UINT*)&bw);
+////		}
+//		if(msgBus.getAttitude(&attitude)){
+//					len = sprintf(buf, "att %u %d %d %d\r\n", attitude.timestamp, (int)(attitude.roll*1000000),
+//															(int)(attitude.pitch*1000000),
+//															(int)(attitude.yaw*1000000));
+//					f_write(&SDFile, buf, len, (UINT*)&bw);
+//		}
+//		msgBus.getNedAccel(&nedAccel);
+//		msgBus.getGPS(&gps);
+//		msgBus.getBarometer(&baro);
+
+		len = sprintf(buf,"sexxxxx\n");
+		f_write(&SDFile, buf, len, (UINT*)&bw);
+
+		if(retSD==FR_OK){
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_SET);
+			HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
+		}
+		else HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_RESET);
+
+		f_close(&SDFile);
+		if(retSD==FR_OK){
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_SET);
+			HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
+		}
+		else HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_RESET);
+		osDelay(5);
 	}
+
+
 }
 
 #define MPU9250_UPDATE_HZ 200
@@ -120,10 +194,14 @@ void debug_main(void* param){
 
 void cppMain(){
     setvbuf(stdout, NULL, _IONBF, 0);
-
+    printf("test\r\n");
     /* micro second timer start */
 	HAL_TIM_Base_Start_IT(&htim2);
 
+//	HAL_TIM_IC_Start_IT(&htim9, TIM_CHANNEL_1);
+//	HAL_TIM_IC_Start_IT(&htim9, TIM_CHANNEL_2);
+	Lidar1D_init(&htim9, TIM_CHANNEL_1, TIM_CHANNEL_2);
+	Lidar1D_run();
 #ifdef USE_MPU9250
 	MPU9250(&hi2c1);
 	TimerHandle_t thMPU9250 = xTimerCreate("MPU9250_timer",
@@ -155,8 +233,7 @@ void cppMain(){
 	 * Filter bandwidth : 1.75 Hz
 	 * response time : 0.3s
 	 */
-	BME280(&hi2c2);
-	BME280_init(P_OSR_04, H_OSR_00, T_OSR_01, normal, BW0_021ODR,t_00_5ms);
+	BME280_init(&hi2c2, P_OSR_04, H_OSR_00, T_OSR_01, normal, BW0_021ODR,t_00_5ms);
 	TimerHandle_t thBME280 = xTimerCreate("BME280_timer",
 										  pdMS_TO_TICKS(1000/BME280_UPDATE_HZ),
 										  pdTRUE,
@@ -227,48 +304,16 @@ void cppMain(){
 
 	xTaskCreate(debug_main,
 				"debug_main",
-				configMINIMAL_STACK_SIZE,
+				1024,
 				NULL,
 				5,
 				NULL);
-
-
-//#ifdef USE_BME280
-//	xTaskCreate(BME280_main,
-//				"BME280_main",
+//	xTaskCreate(moduleCommanderMain,
+//				"moduleCommanderMain",
 //				configMINIMAL_STACK_SIZE,
 //				NULL,
-//				4,
+//				5,
 //				NULL);
-//#endif
-//
-//#ifdef USE_IST8310
-//	xTaskCreate(IST8310_main,
-//				"IST8310_main",
-//				configMINIMAL_STACK_SIZE,
-//				NULL,
-//				4,
-//				NULL);
-//#endif
-//
-//#ifdef USE_GPS
-//	xTaskCreate(GPS_main,
-//				"GPS_main",
-//				configMINIMAL_STACK_SIZE,
-//				NULL,
-//				4,
-//				NULL);
-//#endif
-//
-//#ifdef USE_MPU9250
-//    xTaskCreate(MPU9250_main,
-//    		    "MPU9250_main",
-//				configMINIMAL_STACK_SIZE,
-//				NULL,
-//				4,
-//				NULL);
-//#endif
-
 
 }
 
@@ -310,6 +355,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		}
 	}
 #endif
+
 #ifdef USE_GPS
 	if(huart->Instance == UART8){
 		if(TM_GPS_Update() == TM_GPS_Result_NewData){
@@ -323,4 +369,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	if(huart->Instance == USART2){
 		// telemetry
 	}
+}
+
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim){
+	Lidar1D_CaptureCallback(htim);
 }

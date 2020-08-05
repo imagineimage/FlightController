@@ -16,8 +16,6 @@ public:
 			   uint16_t mode=0, uint16_t subMode=0,
 			   uint16_t calibration=0, uint16_t calibration_sub=0);
 private:
-    struct ArmMode armModeSub;
-
     struct Controller controllerPub;
 };
 
@@ -35,12 +33,13 @@ void RC::setRC(uint16_t roll, uint16_t pitch, uint16_t yaw, uint16_t throttle,
 	this->controllerPub.throttle = throttle;
 	msgBus.setController(this->controllerPub);
 
-//	/* arming */
-//	msgBus.getArmMode(&armModeSub);							/* current arm mode */
-//	ArmMode reqArm = ArmModeType::DisArm;						/* request arm mode */
-//	if( armming > ARMING_THRESHOLD )	reqArm = ArmModeType::Arm;
-//	if(armModeSub.armModeType != reqArm.armModeType) moduleCommander.sendCommand(Command::)
-//	moduleCommander.sendCommand(reqArm);					/* send command */
+	/* arming */
+	struct ModeFlag modeFlag;
+	msgBus.getModeFlag(&modeFlag);							/* current arm mode */
+	Command rcvArmFlag = Command::DisArm;						/* request arm mode */
+	if( armming > ARMING_THRESHOLD )	rcvArmFlag = Command::Arm;
+	if(modeFlag.armMode != rcvArmFlag) ModuleCommander::sendCommand(rcvArmFlag); /* send command */
+
 }
 
 }

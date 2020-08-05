@@ -53,7 +53,6 @@ typedef enum{
 typedef struct{
 	UART_HandleTypeDef *huart;			//uart pointer
 	uint8_t dmaBuf[SBUS_DMA_BUF_SIZE];	// dma buffer
-
 	uint8_t rxBuf[SBUS_BUF_SIZE];		// temperary buffer of sbus
 
 	uint16_t rcValue[SBUS_CHANNEL_NUMBER];

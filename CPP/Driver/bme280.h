@@ -12,6 +12,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
 /* 06/16/2017 Copyright Tlera Corporation
  *
  *  Created by Kris Winer
@@ -100,6 +102,12 @@ baro_mag_i2cFlag_t bm_i2cFlag;
 typedef struct{
 	I2C_HandleTypeDef *hi2c;
 
+	uint8_t buf[9];
+	uint8_t  _dig_H1, _dig_H3, _dig_H6;
+	uint16_t _dig_T1, _dig_P1, _dig_H4, _dig_H5;
+	int16_t  _dig_T2, _dig_T3, _dig_P2, _dig_P3, _dig_P4, _dig_P5, _dig_P6, _dig_P7, _dig_P8, _dig_P9, _dig_H2;
+	int32_t  _t_fine;
+
 	int32_t countT;
 	uint32_t countP, countH;
 
@@ -107,28 +115,17 @@ typedef struct{
 	float P;			/*[hPa]*/
 	float H;
 
-	float base_P;
-
-	uint8_t buf[9];
-	uint8_t  _dig_H1, _dig_H3, _dig_H6;
-	uint16_t _dig_T1, _dig_P1, _dig_H4, _dig_H5;
-	int16_t  _dig_T2, _dig_T3, _dig_P2, _dig_P3, _dig_P4, _dig_P5, _dig_P6, _dig_P7, _dig_P8, _dig_P9, _dig_H2;
-	int32_t  _t_fine;
 } BME280_t;
 
-BME280_t bme280;
+extern BME280_t bme280;
 
-
-void BME280(I2C_HandleTypeDef *hi2c);
-
-void BME280_updateIT();
+void BME280_init(I2C_HandleTypeDef *hi2c, uint8_t Posr, uint8_t Hosr, uint8_t Tosr, uint8_t Mode, uint8_t IIRFilter, uint8_t SBy);
+void BME280_readIT();
 void BME280_i2cRxCpltCallback();
 
 int32_t BME280_readTemperature();
 int32_t BME280_readPressure();
 int16_t BME280_readHumidity();
-
-void BME280_init(uint8_t Posr, uint8_t Hosr, uint8_t Tosr, uint8_t Mode, uint8_t IIRFilter, uint8_t SBy);
 
 int32_t BME280_compensate_T(int32_t adc_T);
 uint32_t BME280_compensate_P(int32_t adc_P);
