@@ -1,0 +1,267 @@
+
+  //   DiscreteIntegrator: '<S35>/Filter'
+  //   Gain: '<S34>/Derivative Gain'
+  //   Sum: '<S35>/SumD'
+
+  positionControl_B.FilterCoefficient = (positionControl_P.pos_x_D *
+    positionControl_B.Integrator_p - positionControl_DW.Filter_DSTATE) *
+    positionControl_P.PIDController_N;
+
+  // Sum: '<S1>/Add4' incorporates:
+  //   Inport: '<Root>/estim_y'
+  //   Inport: '<Root>/set_y'
+
+  positionControl_B.vz_error = positionControl_U.set_y -
+    positionControl_U.estim_y;
+
+  // Gain: '<S235>/Filter Coefficient' incorporates:
+  //   DiscreteIntegrator: '<S227>/Filter'
+  //   Gain: '<S226>/Derivative Gain'
+  //   Sum: '<S227>/SumD'
+
+  positionControl_B.FilterCoefficient_n = (positionControl_P.pos_y_D *
+    positionControl_B.vz_error - positionControl_DW.Filter_DSTATE_m) *
+    positionControl_P.PIDController4_N;
+
+  // Trigonometry: '<S8>/Trigonometric Function' incorporates:
+  //   DataTypeConversion: '<S1>/Data Type Conversion'
+  //   Inport: '<Root>/estim_yaw'
+
+  positionControl_B.Integrator_h = std::sin(static_cast<real_T>
+    (positionControl_U.estim_yaw));
+  positionControl_B.Integrator_c = std::cos(static_cast<real_T>
+    (positionControl_U.estim_yaw));
+
+  // Sum: '<S49>/Sum' incorporates:
+  //   DiscreteIntegrator: '<S40>/Integrator'
+  //   Gain: '<S45>/Proportional Gain'
+
+  positionControl_B.Integrator_b = (positionControl_P.pos_x_P *
+    positionControl_B.Integrator_p + positionControl_DW.Integrator_DSTATE) +
+    positionControl_B.FilterCoefficient;
+
+  // Sum: '<S241>/Sum' incorporates:
+  //   DiscreteIntegrator: '<S232>/Integrator'
+  //   Gain: '<S237>/Proportional Gain'
+
+  rtb_vel_error_idx_0 = (positionControl_P.pos_y_P * positionControl_B.vz_error
+    + positionControl_DW.Integrator_DSTATE_k) +
+    positionControl_B.FilterCoefficient_n;
+
+  // Saturate: '<S47>/Saturation'
+  if (positionControl_B.Integrator_b >
+      positionControl_P.PIDController_UpperSaturationLi) {
+    positionControl_B.Integrator_b =
+      positionControl_P.PIDController_UpperSaturationLi;
+  } else {
+    if (positionControl_B.Integrator_b <
+        positionControl_P.PIDController_LowerSaturationLi) {
+      positionControl_B.Integrator_b =
+        positionControl_P.PIDController_LowerSaturationLi;
+    }
+  }
+
+  // End of Saturate: '<S47>/Saturation'
+
+  // Sum: '<S1>/Add1' incorporates:
+  //   Inport: '<Root>/estim_dx'
+
+  positionControl_B.Integrator_b = positionControl_U.estim_dx -
+    positionControl_B.Integrator_b;
+
+  // Saturate: '<S239>/Saturation'
+  if (rtb_vel_error_idx_0 > positionControl_P.PIDController4_UpperSaturationL) {
+    rtb_vel_error_idx_0 = positionControl_P.PIDController4_UpperSaturationL;
+  } else {
+    if (rtb_vel_error_idx_0 < positionControl_P.PIDController4_LowerSaturationL)
+    {
+      rtb_vel_error_idx_0 = positionControl_P.PIDController4_LowerSaturationL;
+    }
+  }
+
+  // End of Saturate: '<S239>/Saturation'
+
+  // Sum: '<S1>/Add1' incorporates:
+  //   Inport: '<Root>/estim_dy'
+
+  rtb_FilterCoefficient_il = positionControl_U.estim_dy - rtb_vel_error_idx_0;
+
+  // Product: '<S1>/Matrix Multiply' incorporates:
+  //   Gain: '<S8>/Gain'
+  //   SignalConversion generated from: '<S8>/Vector Concatenate1'
+  //   SignalConversion generated from: '<S8>/Vector Concatenate'
+  //
+  rtb_vel_error_idx_0 = positionControl_B.Integrator_c *
+    positionControl_B.Integrator_b + positionControl_B.Integrator_h *
+    rtb_FilterCoefficient_il;
+  positionControl_B.Integrator_h = positionControl_P.Gain_Gain *
+    positionControl_B.Integrator_h * positionControl_B.Integrator_b +
+    positionControl_B.Integrator_c * rtb_FilterCoefficient_il;
+
+  // Gain: '<S283>/Filter Coefficient' incorporates:
+  //   DiscreteIntegrator: '<S275>/Filter'
+  //   Gain: '<S274>/Derivative Gain'
+  //   Sum: '<S275>/SumD'
+
+  rtb_FilterCoefficient_il = (positionControl_P.pos_y_vel_D *
+    positionControl_B.Integrator_h - positionControl_DW.Filter_DSTATE_j) *
+    positionControl_P.PIDController5_N;
+
+  // Sum: '<S289>/Sum' incorporates:
+  //   DiscreteIntegrator: '<S280>/Integrator'
+  //   Gain: '<S285>/Proportional Gain'
+
+  positionControl_B.Integrator_c = (positionControl_P.pos_y_vel_P *
+    positionControl_B.Integrator_h + positionControl_DW.Integrator_DSTATE_f) +
+    rtb_FilterCoefficient_il;
+
+  // Saturate: '<S287>/Saturation'
+  if (positionControl_B.Integrator_c >
+      positionControl_P.PIDController5_UpperSaturationL) {
+    positionControl_B.Integrator_b =
+      positionControl_P.PIDController5_UpperSaturationL;
+  } else if (positionControl_B.Integrator_c <
+             positionControl_P.PIDController5_LowerSaturationL) {
+    positionControl_B.Integrator_b =
+      positionControl_P.PIDController5_LowerSaturationL;
+  } else {
+    positionControl_B.Integrator_b = positionControl_B.Integrator_c;
+  }
+
+  // End of Saturate: '<S287>/Saturation'
+
+  // Sum: '<S273>/SumI2'
+  positionControl_B.Integrator_c = positionControl_B.Integrator_b -
+    positionControl_B.Integrator_c;
+
+  // Gain: '<S1>/Gain1'
+  positionControl_B.Integrator_b *= positionControl_P.Gain1_Gain;
+
+  // Outport: '<Root>/des_roll' incorporates:
+  //   DataTypeConversion: '<S1>/Data Type Conversion3'
+
+  positionControl_Y.des_roll = static_cast<real32_T>
+    (positionControl_B.Integrator_b);
+
+  // Gain: '<S91>/Filter Coefficient' incorporates:
+  //   DiscreteIntegrator: '<S83>/Filter'
+  //   Gain: '<S82>/Derivative Gain'
+  //   Sum: '<S83>/SumD'
+
+  rtb_FilterCoefficient_c = (positionControl_P.pos_x_vel_D * rtb_vel_error_idx_0
+    - positionControl_DW.Filter_DSTATE_d) * positionControl_P.PIDController1_N;
+
+  // Sum: '<S97>/Sum' incorporates:
+  //   DiscreteIntegrator: '<S88>/Integrator'
+  //   Gain: '<S93>/Proportional Gain'
+
+  positionControl_B.Integrator_b = (positionControl_P.pos_x_vel_P *
+    rtb_vel_error_idx_0 + positionControl_DW.Integrator_DSTATE_m) +
+    rtb_FilterCoefficient_c;
+
+  // Saturate: '<S95>/Saturation'
+  if (positionControl_B.Integrator_b >
+      positionControl_P.PIDController1_UpperSaturationL) {
+    rtb_alt_error = positionControl_P.PIDController1_UpperSaturationL;
+  } else if (positionControl_B.Integrator_b <
+             positionControl_P.PIDController1_LowerSaturationL) {
+    rtb_alt_error = positionControl_P.PIDController1_LowerSaturationL;
+  } else {
+    rtb_alt_error = positionControl_B.Integrator_b;
+  }
+
+  // End of Saturate: '<S95>/Saturation'
+
+  // Sum: '<S81>/SumI2'
+  rtb_SumI2_d = rtb_alt_error - positionControl_B.Integrator_b;
+
+  // Outport: '<Root>/des_pitch' incorporates:
+  //   DataTypeConversion: '<S1>/Data Type Conversion2'
+
+  positionControl_Y.des_pitch = static_cast<real32_T>(rtb_alt_error);
+
+  // Outport: '<Root>/des_yaw_rate' incorporates:
+  //   DataTypeConversion: '<S1>/Data Type Conversion'
+  //   DataTypeConversion: '<S1>/Data Type Conversion1'
+  //   Gain: '<S1>/Gain'
+  //   Inport: '<Root>/estim_yaw'
+  //   Inport: '<Root>/set_yaw'
+  //   Sum: '<S1>/Sum'
+
+  positionControl_Y.des_yaw_rate = static_cast<real32_T>
+    ((positionControl_U.set_yaw - positionControl_U.estim_yaw) *
+     positionControl_P.Yaw_angleToRate_P);
+
+  // Gain: '<S229>/Integral Gain'
+  rtb_IntegralGain = positionControl_P.pos_y_I * positionControl_B.vz_error;
+
+  // Sum: '<S1>/Add2' incorporates:
+  //   Gain: '<S1>/Gain3'
+  //   Inport: '<Root>/estim_z'
+  //   Inport: '<Root>/set_alt'
+
+  rtb_alt_error = positionControl_U.set_alt - positionControl_P.Gain3_Gain *
+    positionControl_U.estim_z;
+
+  // Gain: '<S139>/Filter Coefficient' incorporates:
+  //   DiscreteIntegrator: '<S131>/Filter'
+  //   Gain: '<S130>/Derivative Gain'
+  //   Sum: '<S131>/SumD'
+
+  rtb_FilterCoefficient_e = (positionControl_P.pos_z_D * rtb_alt_error -
+    positionControl_DW.Filter_DSTATE_mf) * positionControl_P.PIDController2_N;
+
+  // Sum: '<S145>/Sum' incorporates:
+  //   DiscreteIntegrator: '<S136>/Integrator'
+  //   Gain: '<S141>/Proportional Gain'
+
+  positionControl_B.Integrator_b = (positionControl_P.pos_z_P * rtb_alt_error +
+    positionControl_DW.Integrator_DSTATE_j) + rtb_FilterCoefficient_e;
+
+  // Saturate: '<S143>/Saturation'
+  if (positionControl_B.Integrator_b >
+      positionControl_P.PIDController2_UpperSaturationL) {
+    positionControl_B.Integrator_b =
+      positionControl_P.PIDController2_UpperSaturationL;
+  } else {
+    if (positionControl_B.Integrator_b <
+        positionControl_P.PIDController2_LowerSaturationL) {
+      positionControl_B.Integrator_b =
+        positionControl_P.PIDController2_LowerSaturationL;
+    }
+  }
+
+  // End of Saturate: '<S143>/Saturation'
+
+  // Sum: '<S1>/Add3' incorporates:
+  //   Gain: '<S1>/Gain2'
+  //   Inport: '<Root>/estim_dz'
+
+  positionControl_B.vz_error = positionControl_B.Integrator_b -
+    positionControl_P.Gain2_Gain * positionControl_U.estim_dz;
+
+  // Gain: '<S187>/Filter Coefficient' incorporates:
+  //   DiscreteIntegrator: '<S179>/Filter'
+  //   Gain: '<S178>/Derivative Gain'
+  //   Sum: '<S179>/SumD'
+
+  rtb_FilterCoefficient_l = (positionControl_P.pos_z_vel_D *
+    positionControl_B.vz_error - positionControl_DW.Filter_DSTATE_e) *
+    positionControl_P.PIDController3_N;
+
+  // Sum: '<S193>/Sum' incorporates:
+  //   DiscreteIntegrator: '<S184>/Integrator'
+  //   Gain: '<S189>/Proportional Gain'
+
+  positionControl_B.Integrator_b = (positionControl_P.pos_z_vel_P *
+    positionControl_B.vz_error + positionControl_DW.Integrator_DSTATE_b) +
+    rtb_FilterCoefficient_l;
+
+  // Saturate: '<S191>/Saturation'
+  if (positionControl_B.Integrator_b >
+      positionControl_P.PIDController3_UpperSaturationL) {
+    // Outport: '<Root>/des_Thrust' incorporates:
+    //   DataTypeConversion: '<S1>/Data Type Conversion4'
+
+    positionControl_Y.des_Thrust = static_cast<real32_T>
+      (positionControl_P.PIDController3_UpperSaturationL);
